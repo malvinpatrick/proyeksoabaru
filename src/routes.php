@@ -7,12 +7,15 @@ use Slim\Http\Response;
 return function (App $app) {    
     $app->get('/tokopedia', function (Request $request, Response $response, array $args) {
         $username = $request->getAttribute('jwt')['username'];
-        $tempSQL = "select * from user where username='" . $username ."'";
+        $sql=$this->db->prepare("SET time_zone='+07:00';");
+        $sql->execute();
+
+        $tempSQL = "SELECT username, limit_access,(SELECT COUNT(id) FROM log_access WHERE log_access.username = user.username AND DATE_FORMAT(accessAt, '%d-%m-%Y') = DATE_FORMAT(NOW(), '%d-%m-%Y')) AS count_access FROM user WHERE username = '" . $username ."'";
         $sql=$this->db->prepare($tempSQL);
         $sql->execute();
         $user = $sql->fetchObject();
         if($user){
-            if($user->limit_access > 0){
+            if((int)$user->count_access <= (int)$user->limit_access){
                 $product_name = $request->getQueryParam('q');
                 $product_name = str_replace(" ", "+", $product_name);
 
@@ -46,8 +49,15 @@ return function (App $app) {
                         'location' => $value->shop->city
                     );
                 }
-
+                //insert database
+                $sql=$this->db->prepare("INSERT INTO log_access VALUES(null, '$username',now(),'$product_name')");
+                $sql->execute();
                 return $this->response->withJson($product);
+            }else{
+                return $this->response->withJson(array(
+                    'status' => 'failed',
+                    'message' => 'You have reach limit access!!'
+                ));
             }
             
         }else{

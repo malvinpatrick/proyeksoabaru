@@ -18,10 +18,10 @@ return [
 
         //DB Settings
         'db' => [
-            'host' => 'remotemysql.com',
-            'dbname' => 'RmsYn6Qr9N',
-            'user' => 'RmsYn6Qr9N',
-            'pass' => '9WbsYNKYS0',
+            'host' => '85.10.205.173:3306',
+            'dbname' => 'proyeksoa',
+            'user' => 'proyeksoa',
+            'pass' => 'bxyVkNfxTU5wph9',
         ],
     ],
 ];
