@@ -45,8 +45,7 @@ return function (App $app) {
                         'name' => $value->name,
                         'price' => $value->price,
                         'image_url' => $value->image_url,
-                        'url_site' => $value->url,
-                        'location' => $value->shop->city
+                        'url_site' => $value->url
                     );
                 }
                 //insert database
@@ -105,13 +104,12 @@ return function (App $app) {
                 $response = json_decode($response);
 
                 $product = [];
-                foreach ($response->data->products as $key => $value) {
+                foreach ($response as $key => $value) {
                     $product[] = array(
-                        'name' => $value->name,
-                        'price' => $value->price,
+                        'name' => $value->nama_barang,
+                        'price' => $value->harga,
                         'image_url' => $value->image_url,
-                        'url_site' => $value->url,
-                        'location' => $value->shop->city
+                        'url_site' => $value->url
                     );
                 }
 
