@@ -72,7 +72,10 @@ return function (App $app) {
 
     $app->get('/lazada', function (Request $request, Response $response, array $args) {
         $username = $request->getAttribute('jwt')['username'];
-        $tempSQL = "select * from user where username='" . $username ."'";
+        $sql=$this->db->prepare("SET time_zone='+07:00';");
+        $sql->execute();
+
+        $tempSQL = "SELECT username, limit_access,(SELECT COUNT(id) FROM log_access WHERE log_access.username = user.username AND DATE_FORMAT(accessAt, '%d-%m-%Y') = DATE_FORMAT(NOW(), '%d-%m-%Y')) AS count_access FROM user WHERE username = '" . $username ."'";
         $sql=$this->db->prepare($tempSQL);
         $sql->execute();
         $user = $sql->fetchObject();
@@ -113,6 +116,11 @@ return function (App $app) {
                 }
 
                 return $this->response->withJson($product);
+            }else{
+                return $this->response->withJson(array(
+                    'status' => 'failed',
+                    'message' => 'You have reach limit access!!'
+                ));
             }
             
         }else{
@@ -126,7 +134,10 @@ return function (App $app) {
     });
     $app->get('/search', function (Request $request, Response $response, array $args) {
         $username = $request->getAttribute('jwt')['username'];
-        $tempSQL = "select * from user where username='" . $username ."'";
+        $sql=$this->db->prepare("SET time_zone='+07:00';");
+        $sql->execute();
+
+        $tempSQL = "SELECT username, limit_access,(SELECT COUNT(id) FROM log_access WHERE log_access.username = user.username AND DATE_FORMAT(accessAt, '%d-%m-%Y') = DATE_FORMAT(NOW(), '%d-%m-%Y')) AS count_access FROM user WHERE username = '" . $username ."'";
         $sql=$this->db->prepare($tempSQL);
         $sql->execute();
         $user = $sql->fetchObject();
@@ -157,6 +168,11 @@ return function (App $app) {
                 }
 
                 return $this->response->withJson($retail);
+            }else{
+                return $this->response->withJson(array(
+                    'status' => 'failed',
+                    'message' => 'You have reach limit access!!'
+                ));
             }
             
         }else{
@@ -170,7 +186,10 @@ return function (App $app) {
     });
     $app->get('/favorite', function (Request $request, Response $response, array $args) {
         $username = $request->getAttribute('jwt')['username'];
-        $tempSQL = "select * from user where username='" . $username ."'";
+        $sql=$this->db->prepare("SET time_zone='+07:00';");
+        $sql->execute();
+
+        $tempSQL = "SELECT username, limit_access,(SELECT COUNT(id) FROM log_access WHERE log_access.username = user.username AND DATE_FORMAT(accessAt, '%d-%m-%Y') = DATE_FORMAT(NOW(), '%d-%m-%Y')) AS count_access FROM user WHERE username = '" . $username ."'";
         $sql=$this->db->prepare($tempSQL);
         $sql->execute();
         $user = $sql->fetchObject();
@@ -184,7 +203,10 @@ return function (App $app) {
             }
             
         }else{
-
+            return $this->response->withJson(array(
+                'status' => 'failed',
+                'message' => 'You have reach limit access!!'
+            ));
         }
         header("Content-Type: application/json");
         echo json_encode(array(
@@ -208,7 +230,10 @@ return function (App $app) {
             }
             
         }else{
-
+            return $this->response->withJson(array(
+                'status' => 'failed',
+                'message' => 'You have reach limit access!!'
+            ));
         }
         header("Content-Type: application/json");
         echo json_encode(array(
