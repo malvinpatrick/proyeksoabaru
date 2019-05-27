@@ -15,5 +15,13 @@ return [
             'path' => isset($_ENV['docker']) ? 'php://stdout' : __DIR__ . '/../logs/app.log',
             'level' => \Monolog\Logger::DEBUG,
         ],
+
+        //DB Settings
+        'db' => [
+            'host' => 'remotemysql.com',
+            'dbname' => 'RmsYn6Qr9N',
+            'user' => 'RmsYn6Qr9N',
+            'pass' => '9WbsYNKYS0',
+        ],
     ],
 ];
