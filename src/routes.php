@@ -3,7 +3,8 @@
 use Slim\App;
 use Slim\Http\Request;
 use Slim\Http\Response;
-
+use Firebase\JWT\JWT;
+date_default_timezone_set("Asia/Jakarta");
 return function (App $app) {    
     $app->get('/tokopedia', function (Request $request, Response $response, array $args) {
         $username = $request->getAttribute('jwt')['username'];
@@ -112,7 +113,9 @@ return function (App $app) {
                         'url_site' => $value->url
                     );
                 }
-
+                //insert database
+                $sql=$this->db->prepare("INSERT INTO log_access VALUES(null, '$username',now(),'$product_name')");
+                $sql->execute();
                 return $this->response->withJson($product);
             }else{
                 return $this->response->withJson(array(
@@ -122,13 +125,12 @@ return function (App $app) {
             }
             
         }else{
-
-        }
-        header("Content-Type: application/json");
-        echo json_encode(array(
-            'error' => true, 
-            'message' => 'user not valid'
-        ));
+            header("Content-Type: application/json");
+            echo json_encode(array(
+                'error' => true, 
+                'message' => 'user not valid'
+            ));
+        }        
     });
     $app->get('/search', function (Request $request, Response $response, array $args) {
         $username = $request->getAttribute('jwt')['username'];
@@ -164,7 +166,9 @@ return function (App $app) {
                         'image_uri' => $value->image_uri
                     );
                 }
-
+                //insert database
+                $sql=$this->db->prepare("INSERT INTO log_access VALUES(null, '$username',now(),'$product_name')");
+                $sql->execute();
                 return $this->response->withJson($retail);
             }else{
                 return $this->response->withJson(array(
@@ -174,13 +178,12 @@ return function (App $app) {
             }
             
         }else{
-
+            header("Content-Type: application/json");
+            echo json_encode(array(
+                'error' => true, 
+                'message' => 'user not valid'
+            ));
         }
-        header("Content-Type: application/json");
-        echo json_encode(array(
-            'error' => true, 
-            'message' => 'user not valid'
-        ));
     });
     $app->get('/favorite', function (Request $request, Response $response, array $args) {
         $username = $request->getAttribute('jwt')['username'];
@@ -197,20 +200,23 @@ return function (App $app) {
                 $sql=$this->db->prepare($tempSQL);
                 $sql->execute();
                 $retail = $sql->fetchAll();
+                //insert database
+                $sql=$this->db->prepare("INSERT INTO log_access VALUES(null, '$username',now(),'$product_name')");
+                $sql->execute();
                 return $this->response->withJson($retail);
+            }else{
+                return $this->response->withJson(array(
+                    'status' => 'failed',
+                    'message' => 'You have reach limit access!!'
+                ));
             }
-            
         }else{
-            return $this->response->withJson(array(
-                'status' => 'failed',
-                'message' => 'You have reach limit access!!'
+            header("Content-Type: application/json");
+            echo json_encode(array(
+                'error' => true, 
+                'message' => 'user not valid'
             ));
         }
-        header("Content-Type: application/json");
-        echo json_encode(array(
-            'error' => true, 
-            'message' => 'user not valid'
-        ));
     });
     $app->get('/myfavorite', function (Request $request, Response $response, array $args) {
         $username = $request->getAttribute('jwt')['username'];
@@ -224,20 +230,80 @@ return function (App $app) {
                 $sql=$this->db->prepare($tempSQL);
                 $sql->execute();
                 $retail = $sql->fetchAll();
+                //insert database
+                $sql=$this->db->prepare("INSERT INTO log_access VALUES(null, '$username',now(),'$product_name')");
+                $sql->execute();
                 return $this->response->withJson($retail);
+            }else{
+                return $this->response->withJson(array(
+                    'status' => 'failed',
+                    'message' => 'You have reach limit access!!'
+                ));
             }
-            
         }else{
-            return $this->response->withJson(array(
-                'status' => 'failed',
-                'message' => 'You have reach limit access!!'
+            header("Content-Type: application/json");
+            echo json_encode(array(
+                'error' => true, 
+                'message' => 'user not valid'
             ));
         }
-        header("Content-Type: application/json");
-        echo json_encode(array(
-            'error' => true, 
-            'message' => 'user not valid'
+    });
+
+    $app->get('/topup', function (Request $request, Response $response, array $args) {
+        $username = $request->getAttribute('jwt')['username'];
+        if($request->getQueryParam('mode')){
+            if($request->getQueryParam('mode') == 'C') $limit = 75;
+            else if($request->getQueryParam('mode') == 'B') $limit = 100;
+            else if($request->getQueryParam('mode') == 'A') $limit = 200;
+            else{
+                return $this->response->withJson(array(
+                    'status' => 'error',
+                    'message' => "Mode isn't valid!"
+                ), 410);
+            }
+        }
+
+        $now_seconds = time();
+        $payload = array(
+            'request_limit' => $limit,
+            "iat" => $now_seconds,  
+            "exp" => $now_seconds+(60*30)
+        );
+        return $this->response->withJson(array(
+            'token' => JWT::encode($payload, 'sangatpanjang', "HS256")
         ));
+    });
+
+    $app->post('/topup/submit', function (Request $request, Response $response, array $args) {
+        $username = $request->getAttribute('jwt')['username'];
+        $input = $request->getParsedBody();
+        try{
+            $decoded = JWT::decode($input['token'], 'sangatpanjang', array('HS256'));
+            $tempSQL = "UPDATE user SET limit_access = $decoded->request_limit  WHERE username = '$username'";
+            $sql=$this->db->prepare($tempSQL);
+            $sql->execute();
+
+            $filenya = $request->getUploadedFiles();
+            $file = $filenya['photo'];
+            if($file->getError() == UPLOAD_ERR_OK){
+                $ekstension = pathinfo($file->getClientFilename(), PATHINFO_EXTENSION);
+                $filename = sprintf('%s.%0.8s', time(), $ekstension);
+                $directory = $this->get('settings')['upload_directory'];
+                $file->moveTo($directory . DIRECTORY_SEPARATOR . $filename);
+                return $response->withJson([
+                    'status' => 'success',
+                    'limit_access' => $decoded->request_limit
+                ], 200);
+            }
+            return $this->response->withJson($decoded->request_limit);
+        }catch(\Exception $e){
+            if($e->getMessage() == 'Expired token'){
+                return $this->response->withJson(array(
+                    'status' => 'error',
+                    'message' => 'Expired token!'
+                ));
+            }
+        }
     });
 };
 
